@@ -3,7 +3,7 @@ from tensorflow.keras import layers, models, optimizers, regularizers
 from sklearn.model_selection import train_test_split
 import numpy as np
 from pathlib import Path
-import matplotlib as plt
+import matplotlib.pyplot as plt
 
 def load_dataset(data_dir: str):
     '''
