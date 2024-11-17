@@ -3,6 +3,7 @@ from tensorflow.keras import layers, models, optimizers, regularizers
 from sklearn.model_selection import train_test_split
 import numpy as np
 from pathlib import Path
+import matplotlib as plt
 
 def load_dataset(data_dir: str):
     '''
@@ -77,6 +78,18 @@ def create_model():
 
     return models.Model(inputs=inputs, outputs=outputs)
 
+def plot_loss(history):
+    ## Plot training and validation loss
+    plt.figure(figsize=(8, 6))
+    plt.plot(history.history['loss'], label='Training Loss')
+    plt.plot(history.history['val_loss'], label='Validation Loss', linestyle='--')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.title('Model Loss')
+    plt.legend()
+    plt.grid()
+    plt.show()
+
 def train_model():
     X, y = load_dataset('dataset-processed')
     X = X / 255.0
@@ -123,6 +136,8 @@ def train_model():
     test_loss, test_accuracy = model.evaluate(X_test, y_test)
     print(f"\nTest accuracy: {test_accuracy:.4f}")
 
+    plot_loss(history)
+
     return model, history
 
 if __name__ == "__main__":
@@ -132,3 +147,4 @@ if __name__ == "__main__":
 
     model, history = train_model()
     model.save('spine_classifier.keras')
+
