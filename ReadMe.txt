@@ -35,6 +35,18 @@ try and increase the accuracy
     fizes the issue 
 - attempt to change data sets, IE remove spondo, or classify spondo or scoliosis as 
     both unhealthy and then normal as normal to attempt to shake up the model 
+- Removed spondy from model training (made new), with 100 epochs achieved a testing accuracy of 68%, did not converges
+- Training non-spondy model with 200 epochs, batch size = 16
+    Achieved same accuracy as before, further indicating the model only "knows" scoliosis
+- Attemping removal of pooling layers from no spondy model
+
+Barani conversation:
+- do PCA/linear regression, determine difficulty of problem
+- try subsampling data so no one class dominates the others
+- switching to different dataset is fine if we feel like its necessary
+
+- Did PCA analysis. Looks like about 60 dimensions to explain 95% variance
+- also projected the data onto the first 3 PCs, decent-ish clusters can be seen
 
 
 

@@ -51,21 +51,21 @@ def create_model():
                       kernel_regularizer=regularizers.l2(0.01))(x)
     x = layers.LeakyReLU(0.1)(x)
     x = layers.BatchNormalization()(x)
-    x = layers.MaxPooling2D((2, 2))(x)
+    # x = layers.MaxPooling2D((2, 2))(x)
 
     # second convolutional block
     x = layers.Conv2D(32, (3, 3), padding='same',
                       kernel_regularizer=regularizers.l2(0.01))(x)
     x = layers.LeakyReLU(0.1)(x)
     x = layers.BatchNormalization()(x)
-    x = layers.MaxPooling2D((2, 2))(x)
+    # x = layers.MaxPooling2D((2, 2))(x)
 
     # third convolutional block
     x = layers.Conv2D(64, (3, 3), padding='same',
                       kernel_regularizer=regularizers.l2(0.01))(x)
     x = layers.LeakyReLU(0.1)(x)
     x = layers.BatchNormalization()(x)
-    x = layers.MaxPooling2D((2, 2))(x)
+    # x = layers.MaxPooling2D((2, 2))(x)
 
     # dense layers
     x = layers.Flatten()(x)
@@ -122,8 +122,8 @@ def train_model():
 
     history = model.fit(
         X_train, y_train,
-        epochs=100,
-        batch_size=32,
+        epochs=200,
+        batch_size=16,
         validation_split=0.2,
         callbacks=callbacks,
         class_weight={
