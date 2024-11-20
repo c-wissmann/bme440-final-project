@@ -146,5 +146,5 @@ if __name__ == "__main__":
     tf.keras.mixed_precision.set_global_policy('mixed_float16')
 
     model, history = train_model()
-    model.save('spine_classifier.keras')
+    model.save('spine_classifier.h5')
 
