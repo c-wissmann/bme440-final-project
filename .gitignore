@@ -1,5 +1,13 @@
+# old bs
 *.keras
 .git.backup
+
+# new dataset material
+datasets-PNG/
+diseased/
+normal/
+new-dataset-processed/
+*.png
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
