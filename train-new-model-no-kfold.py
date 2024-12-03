@@ -68,13 +68,22 @@ class SimplerCNN(nn.Module):
             nn.BatchNorm2d(128),
             nn.ReLU(),
             nn.MaxPool2d(2),
+
+            # Fourth conv block
+            nn.Conv2d(128, 256, kernel_size=3, padding=1),
+            nn.BatchNorm2d(256),
+            nn.ReLU(),
+            nn.MaxPool2d(2),
         )
 
         self.adaptive_pool = nn.AdaptiveAvgPool2d((1,1))
         
         self.classifier = nn.Sequential(
-            nn.Dropout(0.5),
-            nn.Linear(128, 2)
+            nn.Dropout(0.3),
+            nn.Linear(256, 64),
+            nn.ReLU(),
+            nn.Dropout(0.3),
+            nn.Linear(64, 2)
         )
 
     def forward(self, x):
@@ -109,12 +118,16 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, device, n
     train_losses, val_losses, train_accs, val_accs = [], [], [], []
     early_stopping = EarlyStopping(patience=5)
 
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+    total_steps = len(train_loader) * num_epochs
+
+    scheduler = optim.lr_scheduler.OneCycleLR(
         optimizer,
-        mode='min',
-        factor=0.25,
-        patience=5,
-        min_lr=1e-6,
+        max_lr=0.003,
+        total_steps=total_steps,
+        pct_start=0.2,
+        div_factor=25,
+        final_div_factor=1e4,
+        anneal_strategy='cos'
     )
 
     for epoch in range(num_epochs):
@@ -158,8 +171,6 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, device, n
         
         val_loss = val_loss / len(val_loader)
         val_acc = 100. * correct / total
-
-        scheduler.step(val_loss)
 
         train_losses.append(train_loss)
         val_losses.append(val_loss)
@@ -235,7 +246,7 @@ if __name__ == "__main__":
         normal_dir=normal_dir,
         diseased_dir=diseased_dir,
         transform=transform,
-        diseased_sample_size=1200
+        diseased_sample_size=1000
     )
 
     train_indices, val_indices = train_test_split(
@@ -269,7 +280,7 @@ if __name__ == "__main__":
     )
 
     fig = plot_training_metrics(train_losses, val_losses, train_accs, val_accs)
-    fig.savefig('training_metrics_no_kfold-es-50-ulrs-32b-1200.png')
+    fig.savefig('training_metrics_no_kfold-conv4-64hl-es-50-OCLRS-32b-1000.png')
     plt.close(fig)
 
     val_preds, val_labels = evaluate_model(model, val_loader, device)
@@ -282,7 +293,7 @@ if __name__ == "__main__":
     plt.title('Confusion Matrix')
     plt.ylabel('True Label')
     plt.xlabel('Predicted Label')
-    cm_fig.savefig('confusion_matrix_no_kfold-es-50-ulrs-32b-1200.png')
+    cm_fig.savefig('confusion_matrix_no_kfold-conv4-64hl-es-50-OCLRS-32b-1000.png')
     plt.close(cm_fig)
 
     print("\nClassification Report:")

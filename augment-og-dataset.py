@@ -13,7 +13,16 @@ import random
 from PIL import Image
 from scipy.ndimage import rotate
 from tqdm import tqdm
+import shutil
 
+def clean_output_dir(output_base_dir):
+    if os.path.exists(output_base_dir):
+        print(f"cleaning existing output directory: {output_base_dir}")
+        shutil.rmtree(output_base_dir)
+
+    os.makedirs(output_base_dir)
+    print("Created fresh output directory")
+    
 def count_files(dir):
     return len([f for f in Path(dir).rglob('*') if f.is_file()])
 
@@ -58,7 +67,7 @@ def apply_augmentation(image, max_rotation=10, max_shift=20, noise_factor=0.05):
     }
 
     movement_aug = []
-    if random.random() < 0.7:
+    if random.random() < 0.8:
         movement_aug = [random.choice(list(movement_augmentations.keys()))]
     num_other_augmentations = random.randint(0,len(other_augmentations))
     other_aug = random.sample(list(other_augmentations.keys()), num_other_augmentations)
@@ -119,9 +128,12 @@ def main():
     base_dir = 'dataset-processed'
     output_base_dir = 'og-augmented'
 
-    os.makedirs(output_base_dir, exist_ok=True)
+    clean_output_dir(output_base_dir)
 
     categories = ['normal', 'scoliosis']
+    for c in categories:
+        os.makedirs(os.path.join(output_base_dir, c))
+        
     for c in categories:
         input_dir = os.path.join(base_dir, c)
         file_count = count_files(input_dir)
@@ -129,7 +141,7 @@ def main():
 
         output_dir = os.path.join(output_base_dir, c)
 
-        target_count = 1200
+        target_count = 1000
         print(f"\nAugmenting {c} images to reach {target_count} images...")
         augment_images(
             input_dir,
