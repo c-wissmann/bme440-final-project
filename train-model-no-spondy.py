@@ -47,32 +47,23 @@ def create_model():
     x = create_augmentation_layers()(inputs, training=True)
 
     # first convolutional block
-    x = layers.Conv2D(16, (3, 3), padding='same',
-                      kernel_regularizer=regularizers.l2(0.01))(x)
-    x = layers.LeakyReLU(0.1)(x)
+    x = layers.Conv2D(32, (3, 3), padding='same', activation='relu')(x)
     x = layers.BatchNormalization()(x)
-    # x = layers.MaxPooling2D((2, 2))(x)
+    x = layers.MaxPooling2D((2, 2))(x)
 
     # second convolutional block
-    x = layers.Conv2D(32, (3, 3), padding='same',
-                      kernel_regularizer=regularizers.l2(0.01))(x)
-    x = layers.LeakyReLU(0.1)(x)
+    x = layers.Conv2D(64, (3, 3), padding='same', activation='relu')(x)
     x = layers.BatchNormalization()(x)
-    # x = layers.MaxPooling2D((2, 2))(x)
+    x = layers.MaxPooling2D((2, 2))(x)
 
     # third convolutional block
-    x = layers.Conv2D(64, (3, 3), padding='same',
-                      kernel_regularizer=regularizers.l2(0.01))(x)
-    x = layers.LeakyReLU(0.1)(x)
+    x = layers.Conv2D(128, (3, 3), padding='same', activation='relu')(x)
     x = layers.BatchNormalization()(x)
-    # x = layers.MaxPooling2D((2, 2))(x)
+    x = layers.MaxPooling2D((2, 2))(x)
 
     # dense layers
     x = layers.Flatten()(x)
-    x = layers.Dropout(0.6)(x)
-    x = layers.Dense(64, kernel_regularizer=regularizers.l2(0.01))(x)
-    x = layers.LeakyReLU(0.1)(x)
-    x = layers.BatchNormalization()(x)
+    x = layers.Dropout(0.5)(x)
 
     outputs = layers.Dense(2, activation='softmax')(x)
 
@@ -91,7 +82,7 @@ def plot_loss(history):
     plt.show()
 
 def train_model():
-    X, y = load_dataset('dataset-processed')
+    X, y = load_dataset('og-augmented')
     X = X / 255.0
     y = tf.keras.utils.to_categorical(y)
 
@@ -122,15 +113,10 @@ def train_model():
 
     history = model.fit(
         X_train, y_train,
-        epochs=200,
-        batch_size=16,
+        epochs=100,
+        batch_size=32,
         validation_split=0.2,
         callbacks=callbacks,
-        class_weight={
-            0: 1,
-            1: 1,
-            2: 1,
-        }
     )
 
     test_loss, test_accuracy = model.evaluate(X_test, y_test)
@@ -146,5 +132,5 @@ if __name__ == "__main__":
     tf.keras.mixed_precision.set_global_policy('mixed_float16')
 
     model, history = train_model()
-    model.save('spine_classifier-no-spondy.h5')
+    model.save('spine_classifier-no-spondy-augmented.h5')
 

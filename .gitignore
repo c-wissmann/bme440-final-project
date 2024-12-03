@@ -2,6 +2,9 @@
 *.keras
 .git.backup
 
+# augmented original dataset
+og-augmented/
+
 # new dataset material
 datasets-PNG/
 diseased/

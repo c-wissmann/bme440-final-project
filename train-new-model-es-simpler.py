@@ -246,13 +246,13 @@ def train_with_kfold(dataset, k_folds=5, num_epochs=50, batch_size=128):  # Incr
         )
 
         fig = plot_training_metrics(train_losses, val_losses, train_accs, val_accs, fold+1)
-        fig.savefig(f'fold_{fold+1}_training_metrics.png')
+        fig.savefig(f'og_fold_{fold+1}_training_metrics.png')
         plt.close(fig)
 
         val_preds, val_labels = evaluate_model(model, val_loader, device)
 
         cm_fig = plot_confusion_matrix(val_labels, val_preds)
-        cm_fig.savefig(f'fold_{fold+1}_confusion_matrix.png')
+        cm_fig.savefig(f'og_fold_{fold+1}_confusion_matrix.png')
         plt.close(cm_fig)
 
         report = classification_report(val_labels, val_preds,
@@ -282,8 +282,8 @@ if __name__ == "__main__":
     random.seed(42)
     np.random.seed(42)
 
-    normal_dir = 'new-dataset-proccessed/normal'
-    diseased_dir = 'new-dataset-proccessed/diseased'
+    normal_dir = 'og-augmented/normal'
+    diseased_dir = 'og-augmented/scoliosis'
 
     transform = transforms.Compose([
         transforms.Grayscale(),
@@ -295,7 +295,7 @@ if __name__ == "__main__":
         normal_dir=normal_dir,
         diseased_dir=diseased_dir,
         transform=transform,
-        diseased_sample_size=1810
+        diseased_sample_size=800
     )
 
     results = train_with_kfold(
