@@ -5,3 +5,26 @@ Average val_accuracy: 0.7913 +/- 0.0969
 Average val_precision: 0.8372 +/- 0.0338
 Average val_recall: 0.7913 +/- 0.0969
 Average val_f1: 0.7732 +/- 0.1309
+
+train-new-model-no-kfold.py w/ 800 normal/scoliosis, final output, early stopping after 17 epochs
+Classification Report:
+              precision    recall  f1-score   support
+
+      Normal       0.72      0.99      0.84       160
+    Diseased       0.99      0.62      0.76       160
+
+    accuracy                           0.81       320
+   macro avg       0.86      0.81      0.80       320
+weighted avg       0.86      0.81      0.80       320
+
+train-new-model-no-kfold.py w/ 800 normal/scoliosis, final output, no early stopping (30 epochs),
+learning rate scheduler and batch size decreased to 64 instead of 128
+Classification Report:
+              precision    recall  f1-score   support
+
+      Normal       0.79      0.99      0.88       160
+    Diseased       0.98      0.74      0.84       160
+
+    accuracy                           0.86       320
+   macro avg       0.89      0.86      0.86       320
+weighted avg       0.89      0.86      0.86       320

@@ -109,6 +109,14 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, device, n
     train_losses, val_losses, train_accs, val_accs = [], [], [], []
     early_stopping = EarlyStopping(patience=5)
 
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer,
+        mode='min',
+        factor=0.25,
+        patience=5,
+        min_lr=1e-6,
+    )
+
     for epoch in range(num_epochs):
         model.train()
         running_loss = 0.0
@@ -151,6 +159,8 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, device, n
         val_loss = val_loss / len(val_loader)
         val_acc = 100. * correct / total
 
+        scheduler.step(val_loss)
+
         train_losses.append(train_loss)
         val_losses.append(val_loss)
         train_accs.append(train_acc)
@@ -162,7 +172,7 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, device, n
 
         if val_acc > best_val_acc:
             best_val_acc = val_acc
-            torch.save(model.state.dict(), 'best_model_no_kfold.pth')
+            torch.save(model.state_dict(), 'best_model_no_kfold.pth')
         
         if early_stopping(val_acc):
             print(f'Early stopping triggered at epoch {epoch+1}')
@@ -225,7 +235,7 @@ if __name__ == "__main__":
         normal_dir=normal_dir,
         diseased_dir=diseased_dir,
         transform=transform,
-        diseased_sample_size=800
+        diseased_sample_size=1200
     )
 
     train_indices, val_indices = train_test_split(
@@ -237,19 +247,19 @@ if __name__ == "__main__":
 
     train_loader = DataLoader(
         dataset,
-        batch_size=128,
+        batch_size=32,
         sampler=torch.utils.data.SubsetRandomSampler(train_indices),
         num_workers=4
     )
 
     val_loader = DataLoader(
         dataset,
-        batch_size=128,
-        sampler=torch.utils.SubsetRandomSampler(val_indices),
+        batch_size=32,
+        sampler=torch.utils.data.SubsetRandomSampler(val_indices),
         num_workers=4
     )
 
-    device = torch.device("cuda" if torch.cuda_is_available() else "cpu")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = SimplerCNN(input_channels=1).to(device)
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=0.001)
@@ -259,7 +269,7 @@ if __name__ == "__main__":
     )
 
     fig = plot_training_metrics(train_losses, val_losses, train_accs, val_accs)
-    fig.savefig('training_metrics_no_kfold.png')
+    fig.savefig('training_metrics_no_kfold-es-50-ulrs-32b-1200.png')
     plt.close(fig)
 
     val_preds, val_labels = evaluate_model(model, val_loader, device)
@@ -272,7 +282,7 @@ if __name__ == "__main__":
     plt.title('Confusion Matrix')
     plt.ylabel('True Label')
     plt.xlabel('Predicted Label')
-    cm_fig.savefig('confusion_matrix_no_kfold.png')
+    cm_fig.savefig('confusion_matrix_no_kfold-es-50-ulrs-32b-1200.png')
     plt.close(cm_fig)
 
     print("\nClassification Report:")

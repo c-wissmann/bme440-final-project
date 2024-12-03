@@ -129,7 +129,7 @@ def main():
 
         output_dir = os.path.join(output_base_dir, c)
 
-        target_count = 800
+        target_count = 1200
         print(f"\nAugmenting {c} images to reach {target_count} images...")
         augment_images(
             input_dir,
