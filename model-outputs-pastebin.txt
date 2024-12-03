@@ -1,0 +1,7 @@
+train-new-model-es-simpler.py w/ 800 normal/scoliosis, final output after 5 folds:
+
+Average Results Across All Folds:
+Average val_accuracy: 0.7913 +/- 0.0969
+Average val_precision: 0.8372 +/- 0.0338
+Average val_recall: 0.7913 +/- 0.0969
+Average val_f1: 0.7732 +/- 0.1309
