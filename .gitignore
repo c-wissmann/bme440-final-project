@@ -4,6 +4,7 @@
 
 # augmented original dataset
 og-augmented/
+checkpoints/
 
 # new dataset material
 datasets-PNG/
