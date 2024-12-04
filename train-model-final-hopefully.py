@@ -23,16 +23,16 @@ class ImageDataset(Dataset):
 
         print(f"Found {len(normal_paths)} normal images")
         print(f"Found {len(diseased_paths)} diseased images")
-        
+
         if diseased_sample_size is not None:
             if diseased_sample_size > len(diseased_paths):
-                print(f"Warning: Requested sample size ({diseased_sample_size}) is larger than available diseased images ({len(diseased_paths)})")
+                print(f"Warning: requested sample sixe ({diseased_sample_size}) is larger than available diseased images ({len(diseased_paths)})")
                 print("Using all available diseased images instead")
             else:
                 diseased_paths = random.sample(diseased_paths, diseased_sample_size)
-        
+
         self.image_paths = normal_paths + diseased_paths
-        self.labels = ([0] * len(normal_paths)) + ([1] * len(diseased_paths))
+        self.labels = ([0] * len(normal_paths) + ([1] * len(diseased_paths)))
 
         print(f"Dataset created with {len(normal_paths)} normal images and {len(diseased_paths)} diseased images")
     
@@ -43,50 +43,89 @@ class ImageDataset(Dataset):
         image = Image.open(self.image_paths[index])
         label = self.labels[index]
 
-        if self.transform:
-            image = self.transform(image)
+        if self.transform: image = self.transform(image)
 
         return image, label
+    
+class ImprovedCNN(nn.Module):
+    def __init__(self, input_channels=1, dropout_rate=0.3):
+        super(ImprovedCNN, self).__init__()
 
-class SimplerCNN(nn.Module):
-    def __init__(self, input_channels=1):
-        super(SimplerCNN, self).__init__()
-        
-        self.features = nn.Sequential(
-            # First conv block
+        self.conv1 = nn.Sequential(
             nn.Conv2d(input_channels, 32, kernel_size=3, padding=1),
             nn.BatchNorm2d(32),
-            nn.ReLU(),
+            nn.LeakyReLU(0.1),
+            nn.Conv2d(32, 32, kernel_size=3, padding=1),
+            nn.BatchNorm2d(32),
+            nn.LeakyReLU(0.1),
             nn.MaxPool2d(2),
-            
-            # Second conv block
+            nn.Dropout2d(0.1)
+        )
+
+        self.conv2 = nn.Sequential(
             nn.Conv2d(32, 64, kernel_size=3, padding=1),
             nn.BatchNorm2d(64),
-            nn.ReLU(),
+            nn.LeakyReLU(0.1),
+            nn.Conv2d(64, 64, kernel_size=3, padding=1),
+            nn.BatchNorm2d(64),
+            nn.LeakyReLU(0.1),
             nn.MaxPool2d(2),
-            
-            # Third conv block
+            nn.Dropout2d(0.15)
+        )
+
+        self.conv3 = nn.Sequential(
             nn.Conv2d(64, 128, kernel_size=3, padding=1),
             nn.BatchNorm2d(128),
-            nn.ReLU(),
+            nn.LeakyReLU(0.1),
+            nn.Conv2d(128, 128, kernel_size=3, padding=1),
+            nn.BatchNorm2d(128),
+            nn.LeakyReLU(0.1),
             nn.MaxPool2d(2),
+            nn.Dropout2d(0.2)
+        )
 
-            # Fourth conv block
+        self.conv4 = nn.Sequential(
             nn.Conv2d(128, 256, kernel_size=3, padding=1),
             nn.BatchNorm2d(256),
-            nn.ReLU(),
+            nn.LeakyReLU(0.1),
+            nn.Conv2d(256, 256, kernel_size=3, padding=1),
+            nn.BatchNorm2d(256),
+            nn.LeakyReLU(0.1),
             nn.MaxPool2d(2),
+            nn.Dropout2d(0.25)
         )
 
         self.adaptive_pool = nn.AdaptiveAvgPool2d((1,1))
-        
+
         self.classifier = nn.Sequential(
-            nn.Dropout(0.3),
-            nn.Linear(256, 2),
+            nn.Dropout(dropout_rate),
+            nn.Linear(256, 128),
+            nn.BatchNorm1d(128),
+            nn.LeakyReLU(0.1),
+            nn.Dropout(dropout_rate/2),
+            nn.Linear(128,2)
         )
 
+        self._initialize_weights()
+    
+    def _initialize_weights(self):
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='leaky_relu')
+                if m.bias is not None:
+                    nn.init.constant_(m.bias, 0)
+                elif isinstance(m, nn.BatchNorm2d):
+                    nn.init.constant_(m.weight, 1)
+                    nn.init.constant_(m.bias, 0)
+                elif isinstance(m, nn.Linear):
+                    nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='leaky_relu')
+                    nn.init_constant_(m.bias, 0)
+    
     def forward(self, x):
-        x = self.features(x)
+        x = self.conv1(x)
+        x = self.conv2(x)
+        x = self.conv3(x)
+        x = self.conv4(x)
         x = self.adaptive_pool(x)
         x = x.view(x.size(0), -1)
         x = self.classifier(x)
@@ -103,17 +142,17 @@ class EarlyStopping:
     def __call__(self, val_acc):
         if self.best_acc is None:
             self.best_acc = val_acc
-        elif val_acc < self.best_acc + self.min_delta:
+        elif val_acc < self.best_acc - self.min_delta:
             self.counter += 1
             if self.counter >= self.patience:
                 self.early_stop = True
-        else:
+        elif val_acc > self.best_acc:
             self.best_acc = val_acc
             self.counter = 0
         return self.early_stop
 
 def save_checkpoint(model, epoch, val_acc, path='checkpoints'):
-    os.makedirs(path,exist_ok=True)
+    os.makedirs(path, exist_ok=True)
     torch.save({
         'epoch': epoch,
         'model_state_dict': model.state_dict(),
@@ -163,9 +202,9 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, device, n
         optimizer,
         max_lr=0.001,
         total_steps=total_steps,
-        pct_start=0.3,
-        div_factor=25,
-        final_div_factor=1e4,
+        pct_start=0.2,
+        div_factor=10,
+        final_div_factor=1e3,
         anneal_strategy='cos'
     )
 
@@ -182,6 +221,10 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, device, n
             outputs = model(inputs)
             loss = criterion(outputs, labels)
             loss.backward()
+            
+            # Add gradient clipping
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+            
             optimizer.step()
             scheduler.step()
 
@@ -227,7 +270,7 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, device, n
 
         if val_acc > best_val_acc:
             best_val_acc = val_acc
-            torch.save(model.state_dict(), 'best_model_no_kfold.pth')
+            torch.save(model.state_dict(), 'best_model.pth')
         
         if early_stopping(val_acc):
             print(f'Early stopping triggered at epoch {epoch+1}')
@@ -242,12 +285,12 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, device, n
         ensemble_models = []
         for path in checkpoint_paths:
             model_state = torch.load(path)['model_state_dict']
-            model_copy = SimplerCNN(input_channels=1).to(device)
+            model_copy = ImprovedCNN(input_channels=1).to(device)
             model_copy.load_state_dict(model_state)
             ensemble_models.append(model_copy)
         
         averaged_state = average_checkpoints(checkpoint_paths)
-        averaged_model = SimplerCNN(input_channels=1).to(device)
+        averaged_model = ImprovedCNN(input_channels=1).to(device)
         averaged_model.load_state_dict(averaged_state)
 
         ensemble_models.append(averaged_model)
@@ -272,21 +315,6 @@ def evaluate_ensemble(models, data_loader, device):
 
     accuracy = 100. * correct / total
     return accuracy, np.array(all_preds), np.array(all_labels)
-
-def evaluate_model(model, data_loader, device):
-    model.eval()
-    all_preds, all_labels = [], []
-
-    with torch.no_grad():
-        for inputs, labels in data_loader:
-            inputs, labels = inputs.to(device), labels.to(device)
-            outputs = model(inputs)
-            _, preds = outputs.max(1)
-
-            all_preds.extend(preds.cpu().numpy())
-            all_labels.extend(labels.cpu().numpy())
-    
-    return np.array(all_preds), np.array(all_labels)
 
 def plot_training_metrics(train_losses, val_losses, train_accs, val_accs):
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15,5))
@@ -322,8 +350,11 @@ if __name__ == "__main__":
     normal_dir = 'og-augmented/normal'
     diseased_dir = 'og-augmented/scoliosis'
 
+    # Enhanced data augmentation
     transform = transforms.Compose([
         transforms.Grayscale(),
+        transforms.RandomAffine(degrees=10, translate=(0.1, 0.1), scale=(0.9, 1.1)),
+        transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.5], std=[0.5])
     ])
@@ -357,25 +388,29 @@ if __name__ == "__main__":
     )
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = SimplerCNN(input_channels=1).to(device)
+    model = ImprovedCNN(input_channels=1).to(device)
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-5)
+    optimizer = optim.AdamW(model.parameters(), lr=0.001, weight_decay=0.01)
 
+    # Train the model
     metrics, ensemble_models = train_model(
         model, train_loader, val_loader, criterion, optimizer, device, num_epochs=100
     )
     train_losses, val_losses, train_accs, val_accs = metrics
 
+    # Plot and save training metrics
     fig = plot_training_metrics(train_losses, val_losses, train_accs, val_accs)
-    fig.savefig('training_metrics_no_kfold-conv4-esp15-ENS-100-OCLRS-L2R-32b-1000.png')
+    fig.savefig('training_metrics_improved.png')
     plt.close(fig)
 
+    # Evaluate ensemble performance
     ensemble_acc, ensemble_preds, ensemble_labels = evaluate_ensemble(
         ensemble_models, val_loader, device
     )
 
     print(f"\nEnsemble Accuracy: {ensemble_acc:.2f}%")
 
+    # Plot and save confusion matrix
     cm_fig = plt.figure(figsize=(8,6))
     sns.heatmap(confusion_matrix(ensemble_labels, ensemble_preds),
                 annot=True, fmt='d', cmap='Blues',
@@ -384,10 +419,9 @@ if __name__ == "__main__":
     plt.title('Confusion Matrix')
     plt.ylabel('True Label')
     plt.xlabel('Predicted Label')
-    cm_fig.savefig('confusion_matrix_no_kfold-conv4-esp15-ENS-100-OCLRS-L2R-32b-1000.png')
+    cm_fig.savefig('confusion_matrix_improved.png')
     plt.close(cm_fig)
 
     print("\nClassification Report:")
     print(classification_report(ensemble_labels, ensemble_preds,
-                                target_names=['Normal', 'Diseased']))
-    
+                              target_names=['Normal', 'Diseased']))
