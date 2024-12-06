@@ -154,7 +154,7 @@ class ImageClassificationComparison:
 
         # regular
         axs[0,0].scatter(self.y_test, self.results['regular']['predictions'], alpha=0.5)
-        axs[0,0].plot([0,39], [0,39], 'r--', lw=2)
+        axs[0,0].plot([0,1], [0,1], 'r--', lw=2)
         axs[0,0].set_xlabel('Actual class labels')
         axs[0,0].set_ylabel('Predicted labels (rounded)')
         axs[0,0].set_title('Regular LR: actual vs predicted (rounded)')
@@ -165,7 +165,7 @@ class ImageClassificationComparison:
 
         # onehot
         axs[0,1].scatter(self.y_test + jitter, self.results['onehot']['predictions'] + jitter, alpha=0.5)
-        axs[0,1].plot([0,39], [0,39], 'r--', lw=2)
+        axs[0,1].plot([0,1], [0,1], 'r--', lw=2)
         axs[0,1].set_xlabel('Actual class labels')
         axs[0,1].set_ylabel('Predicted labels')
         axs[0,1].set_title('OneHot LR: actual vs predicted')
@@ -173,7 +173,7 @@ class ImageClassificationComparison:
 
         # logistic
         axs[1,0].scatter(self.y_test + jitter, self.results['logistic']['predictions'] + jitter, alpha=0.5)
-        axs[1,0].plot([0,39], [0,39], 'r--', lw=2)
+        axs[1,0].plot([0,1], [0,1], 'r--', lw=2)
         axs[1,0].set_xlabel('Actual class labels')
         axs[1,0].set_ylabel('Predicted labels')
         axs[1,0].set_title('Logistic Regression: actual vs predicted')
@@ -233,7 +233,7 @@ class ImageClassificationComparison:
         axs[2,1].grid(True)
 
         plt.tight_layout()
-        return plt
+        return fig
     
     def print_comparison_report(self):
         print("\nModel Comparison Report:")
@@ -266,3 +266,5 @@ comparison.train_onehot()
 comparison.train_logistic()
 comparison.print_comparison_report()
 plot = comparison.plot_comparisons()
+plot.savefig('regression_results.png')
+plt.close(plot)

@@ -347,8 +347,8 @@ if __name__ == "__main__":
     random.seed(42)
     np.random.seed(42)
 
-    normal_dir = 'og-augmented/normal'
-    diseased_dir = 'og-augmented/scoliosis'
+    normal_dir = 'dataset-processed/normal'
+    diseased_dir = 'dataset-processed/scoliosis'
 
     # Enhanced data augmentation
     transform = transforms.Compose([
